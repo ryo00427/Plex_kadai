@@ -1,11 +1,14 @@
 module Api
   class MessagesController < ApplicationController
+    include ConversationParticipation
+
     before_action :authenticate_request!
     before_action :set_conversation
     before_action :require_participant!
 
     def index
-      render json: { messages: @conversation.messages.order(:created_at).map { |m| MessageSerializer.new(m) } }
+      messages, meta = paginate(@conversation.messages.order(:created_at))
+      render json: { messages: messages.map { |m| MessageSerializer.new(m) }, meta: }
     end
 
     def create
@@ -16,14 +19,6 @@ module Api
       else
         render json: { errors: message.errors.full_messages }, status: :unprocessable_entity
       end
-    end
-
-    private
-
-    def set_conversation = @conversation = Conversation.find(params[:conversation_id])
-
-    def require_participant!
-      render json: { error: "Forbidden" }, status: :forbidden unless @conversation.participant?(current_account)
     end
   end
 end

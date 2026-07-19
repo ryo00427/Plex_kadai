@@ -19,6 +19,7 @@ Rails.application.routes.draw do
 
     resources :conversations, only: %i[index create] do
       resources :messages, only: %i[index create]
+      member { post :read }
     end
   end
 
