@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Light theme only. A partial dark theme (CSS variables with no matching
+ * component styles) previously left inner pages unreadable when the OS
+ * preferred dark, so the theme is intentionally single-mode.
+ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ground text-ink antialiased;
+    /* Japanese text needs looser lines than the Latin default. */
+    line-height: 1.75;
+  }
+
+  /* Headings run tighter than body copy to keep the type scale distinct. */
+  h1,
+  h2,
+  h3 {
+    line-height: 1.35;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ai-500 ring-offset-2 ring-offset-ground;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-line bg-surface shadow-card;
+  }
+
+  .field {
+    @apply block w-full rounded-md border border-line bg-surface px-3 py-2 text-ink
+      placeholder:text-muted/70 focus:border-ai-500 focus:outline-none
+      focus:ring-2 focus:ring-ai-500/25;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2
+      font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-ai-700 text-white hover:bg-ai-900;
+  }
+
+  .btn-scout {
+    @apply btn bg-wakaba-500 text-white hover:bg-wakaba-600;
+  }
+
+  .btn-quiet {
+    @apply btn border border-line bg-surface text-ink hover:bg-ai-50;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
