@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    command: bash -c "bin/rails db:prepare && bin/rails s -b 0.0.0.0 -p 3001"
+    environment:
+      DB_HOST: db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: scout_development
+      # Read from a root .env (created via `cp .env.example .env`) when present,
+      # falling back to this dev-only default so the stack still boots without one.
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_change_me}
+      RAILS_ENV: development
+    ports: ["3001:3001"]
+    depends_on:
+      db: { condition: service_healthy }
+    volumes: ["./backend:/app"]
+
+  frontend:
+    build: ./frontend
+    command: npm run dev
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3001/api}
+    ports: ["3000:3000"]
+    volumes: ["./frontend:/app", "/app/node_modules"]
+    depends_on: [backend]
+
+volumes:
+  pgdata:

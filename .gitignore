@@ -1,0 +1,16 @@
+# Ruby / Rails
+/backend/tmp/
+/backend/log/
+/backend/.bundle/
+/backend/vendor/bundle/
+/backend/config/master.key
+/backend/storage/
+/backend/.byebug_history
+# Node / Next.js
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+# Env
+.env
+# OS
+.DS_Store
