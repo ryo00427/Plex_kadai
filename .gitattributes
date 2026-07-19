@@ -1,0 +1,17 @@
+# Normalize line endings on checkout regardless of the local core.autocrlf
+# setting. This matters concretely for backend/bin/* (executed directly via
+# their `#!/usr/bin/env ruby` shebang inside the Linux Docker containers) —
+# CRLF line endings there break with "env: ruby\r: No such file or directory".
+* text=auto eol=lf
+
+# Executable scripts: force LF explicitly.
+/backend/bin/* text eol=lf
+
+# Binary assets: never touch line endings.
+*.woff binary
+*.woff2 binary
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
