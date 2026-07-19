@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::API
   include Authenticatable
+  include Paginatable
 
   # Ensure ActiveRecord::RecordNotFound (raised by e.g. Intern.find, JobPosting.find,
   # Conversation.find) always renders a JSON body instead of Rails' default HTML/plain
