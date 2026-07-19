@@ -4,6 +4,16 @@ FactoryBot.define do
     industry { "IT" }
     description { "ソフトウェア開発" }
     website { "https://example.com" }
-    after(:build) { |c| c.build_account(email: "company#{rand(1_000_000)}@example.com", password: "password123", role: :company) }
+
+    # See the note in the interns factory.
+    transient { with_account { true } }
+
+    after(:build) do |company, evaluator|
+      if evaluator.with_account
+        company.build_account(
+          email: "company#{rand(1_000_000)}@example.com", password: "password123", role: :company
+        )
+      end
+    end
   end
 end

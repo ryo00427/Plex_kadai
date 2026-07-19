@@ -14,11 +14,24 @@ RSpec.describe Account, type: :model do
   end
 
   it "role enum を持つ" do
-    expect(build(:account, role: :company).company?).to be true
+    account = build(:account, :company)
+    expect(account.company?).to be true
+    expect(account.profileable_type).to eq("Company")
   end
 
   it "メールは前後の空白を除去して小文字化して保存する" do
     account = create(:account, email: " Mixed.Case@Example.com ")
     expect(account.email).to eq("mixed.case@example.com")
+  end
+
+  it "プロフィールのないアカウントは無効" do
+    account = build(:account, profileable: nil)
+    expect(account).not_to be_valid
+  end
+
+  it "role とプロフィール種別が食い違うアカウントは無効" do
+    account = build(:account, role: :company, profileable: create(:intern, with_account: false))
+    expect(account).not_to be_valid
+    expect(account.errors[:profileable_type]).to be_present
   end
 end

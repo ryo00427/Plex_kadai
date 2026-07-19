@@ -51,4 +51,64 @@ RSpec.describe "Auth", type: :request do
     get "/api/me", headers: { "Authorization" => "Bearer garbage.invalid.token" }
     expect(response).to have_http_status(:unauthorized)
   end
+
+  it "登録したアカウントはプロフィールに紐づく" do
+    post "/api/auth/register", params: {
+      role: "intern", email: "newbie@example.com", password: "password123",
+      profile: { name: "新人", university: "A大学" }
+    }, as: :json
+
+    expect(response).to have_http_status(:created)
+    account = Account.find_by(email: "newbie@example.com")
+    expect(account.profileable).to be_a(Intern)
+    expect(account.profileable.name).to eq("新人")
+  end
+
+  it "ログイン試行が連続すると 429 を返す", :throttled do
+    create(:intern).account.update!(email: "victim@example.com")
+
+    6.times do
+      post "/api/auth/login",
+        params: { email: "victim@example.com", password: "wrong-password" },
+        headers: { "REMOTE_ADDR" => "1.2.3.4" }, as: :json
+    end
+
+    expect(response).to have_http_status(:too_many_requests)
+  end
+
+  it "制限内のログイン試行は通常どおり処理される", :throttled do
+    create(:intern).account.update!(email: "ok@example.com")
+
+    post "/api/auth/login",
+      params: { email: "ok@example.com", password: "password123" },
+      headers: { "REMOTE_ADDR" => "5.6.7.8" }, as: :json
+
+    expect(response).to have_http_status(:ok)
+  end
+
+  it "重複メールでの登録エラーは重複して返らない" do
+    create(:intern).account.update!(email: "taken@example.com")
+
+    post "/api/auth/register", params: {
+      role: "intern", email: "taken@example.com", password: "password123",
+      profile: { name: "後発" }
+    }, as: :json
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    errors = JSON.parse(response.body)["errors"]
+    expect(errors).to eq(errors.uniq)
+  end
+
+  it "重複メールでの登録はプロフィール行を残さない" do
+    create(:intern).account.update!(email: "taken2@example.com")
+
+    expect {
+      post "/api/auth/register", params: {
+        role: "intern", email: "taken2@example.com", password: "password123",
+        profile: { name: "後発" }
+      }, as: :json
+    }.not_to change(Intern, :count)
+
+    expect(response).to have_http_status(:unprocessable_entity)
+  end
 end
