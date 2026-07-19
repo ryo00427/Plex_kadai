@@ -15,8 +15,9 @@ module Api
         token = JsonWebToken.encode(account_id: profile.account.id)
         render json: { token:, account: AccountSerializer.new(profile.account) }, status: :created
       else
-        render json: { errors: profile.errors.full_messages + profile.account.errors.full_messages },
-               status: :unprocessable_entity
+        # has_one autosave already copies the account's errors onto the profile,
+        # so concatenating account.errors here would repeat every message.
+        render json: { errors: profile.errors.full_messages }, status: :unprocessable_entity
       end
     end
 
