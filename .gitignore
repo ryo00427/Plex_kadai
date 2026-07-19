@@ -14,3 +14,5 @@
 .env
 # OS
 .DS_Store
+# 作業用の設計・計画メモ(リポジトリには含めない)
+/docs/superpowers/
