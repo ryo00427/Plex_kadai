@@ -14,4 +14,14 @@ RSpec.describe Conversation, type: :model do
     expect(convo.participant?(convo.company.account)).to be true
     expect(convo.participant?(create(:intern).account)).to be false
   end
+
+  it "role と profileable_type がずれたアカウントは参加者と判定しない" do
+    convo = create(:conversation)
+    # role says "company" and the id matches the conversation's company_id, but
+    # the profile is an Intern. Comparing ids alone would wrongly grant access,
+    # so participant? must also check profileable_type.
+    impostor = Account.new(role: :company, profileable_type: "Intern", profileable_id: convo.company_id)
+
+    expect(convo.participant?(impostor)).to be false
+  end
 end
