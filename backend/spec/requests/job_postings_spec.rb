@@ -91,4 +91,21 @@ RSpec.describe "JobPostings", type: :request do
       headers: auth_header(intern.account), as: :json
     expect(response).to have_http_status(:forbidden)
   end
+
+  it "role と profileable_type がずれたアカウントは他社の募集を編集できない" do
+    owner = create(:company)
+    posting = create(:job_posting, company: owner, title: "元のタイトル")
+    # A row that predates the role/profileable_type validation: role claims
+    # company and profileable_id happens to match the owning company, but the
+    # profile is actually an Intern. Trusting role alone would grant ownership.
+    impostor = create(:intern)
+    impostor.account.update_columns(role: 1, profileable_type: "Intern", profileable_id: owner.id)
+
+    patch "/api/job_postings/#{posting.id}",
+      params: { job_posting: { title: "乗っ取り" } },
+      headers: auth_header(impostor.account), as: :json
+
+    expect(response).to have_http_status(:forbidden)
+    expect(posting.reload.title).to eq("元のタイトル")
+  end
 end

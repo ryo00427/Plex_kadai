@@ -5,8 +5,8 @@ module Api
     before_action :require_owner!, only: %i[update destroy]
 
     def index
-      postings = JobPosting.published.includes(:company).order(created_at: :desc)
-      render json: { job_postings: postings.map { |p| JobPostingSerializer.new(p) } }
+      postings, meta = paginate(JobPosting.published.includes(:company).order(created_at: :desc))
+      render json: { job_postings: postings.map { |p| JobPostingSerializer.new(p) }, meta: }
     end
 
     def show
@@ -33,8 +33,8 @@ module Api
     def mine
       return render json: { error: "Forbidden" }, status: :forbidden unless current_account.company?
 
-      postings = current_account.profileable.job_postings.includes(:company).order(created_at: :desc)
-      render json: { job_postings: postings.map { |p| JobPostingSerializer.new(p) } }
+      postings, meta = paginate(current_account.profileable.job_postings.includes(:company).order(created_at: :desc))
+      render json: { job_postings: postings.map { |p| JobPostingSerializer.new(p) }, meta: }
     end
 
     def update
@@ -58,8 +58,12 @@ module Api
       render json: { error: "Forbidden" }, status: :forbidden unless owner?(@posting)
     end
 
+    # Checks profileable_type rather than role, mirroring Conversation#participant?.
+    # Account validates that the two agree, so this is defence in depth for rows
+    # written before that validation existed.
     def owner?(posting)
-      current_account&.company? && posting.company_id == current_account.profileable_id
+      current_account&.profileable_type == "Company" &&
+        posting.company_id == current_account.profileable_id
     end
 
     def posting_params
