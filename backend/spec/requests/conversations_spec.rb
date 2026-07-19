@@ -61,4 +61,51 @@ RSpec.describe "Conversations", type: :request do
     get "/api/conversations", headers: { "Authorization" => "Bearer not-a-real-token" }
     expect(response).to have_http_status(:unauthorized)
   end
+
+  it "存在しないインターンとの会話開始は 404" do
+    company = create(:company)
+    post "/api/conversations", params: { intern_id: 0 }, headers: auth_header(company.account), as: :json
+    expect(response).to have_http_status(:not_found)
+  end
+
+  it "相手のメッセージを既読にできる" do
+    convo = create(:conversation)
+    post "/api/conversations/#{convo.id}/messages",
+      params: { body: "面談しませんか" }, headers: auth_header(convo.company.account), as: :json
+
+    post "/api/conversations/#{convo.id}/read", headers: auth_header(convo.intern.account), as: :json
+    expect(response).to have_http_status(:no_content)
+    expect(convo.messages.reload.first.read_at).to be_present
+  end
+
+  it "自分が送ったメッセージは既読にしない" do
+    convo = create(:conversation)
+    post "/api/conversations/#{convo.id}/messages",
+      params: { body: "面談しませんか" }, headers: auth_header(convo.company.account), as: :json
+
+    post "/api/conversations/#{convo.id}/read", headers: auth_header(convo.company.account), as: :json
+    # Asserting the status too: without it this example passes even when the
+    # endpoint does nothing at all (or 404s), since read_at is nil either way.
+    expect(response).to have_http_status(:no_content)
+    expect(convo.messages.reload.first.read_at).to be_nil
+  end
+
+  it "非参加者は既読にできない (403)" do
+    convo = create(:conversation)
+    outsider = create(:intern)
+    post "/api/conversations/#{convo.id}/read", headers: auth_header(outsider.account), as: :json
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "会話一覧に未読件数が含まれる" do
+    convo = create(:conversation)
+    post "/api/conversations/#{convo.id}/messages",
+      params: { body: "面談しませんか" }, headers: auth_header(convo.company.account), as: :json
+
+    get "/api/conversations", headers: auth_header(convo.intern.account)
+    expect(JSON.parse(response.body)["conversations"].first["unread_count"]).to eq(1)
+
+    get "/api/conversations", headers: auth_header(convo.company.account)
+    expect(JSON.parse(response.body)["conversations"].first["unread_count"]).to eq(0)
+  end
 end
