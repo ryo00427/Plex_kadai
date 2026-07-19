@@ -4,8 +4,8 @@ module Api
     before_action :require_company!, only: %i[index show]
 
     def index
-      interns = Intern.order(created_at: :desc)
-      render json: { interns: interns.map { |i| InternSerializer.new(i) } }
+      interns, meta = paginate(Intern.order(created_at: :desc))
+      render json: { interns: interns.map { |i| InternSerializer.new(i) }, meta: }
     end
 
     def show
@@ -14,9 +14,9 @@ module Api
     end
 
     def update_me
-      intern = current_account.profileable
       return render json: { error: "Forbidden" }, status: :forbidden unless current_account.intern?
 
+      intern = current_account.profileable
       if intern.update(intern_params)
         render json: { intern: InternSerializer.new(intern) }
       else

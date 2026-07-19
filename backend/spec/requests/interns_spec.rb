@@ -36,4 +36,12 @@ RSpec.describe "Interns", type: :request do
     expect(response).to have_http_status(:not_found)
     expect(JSON.parse(response.body)["error"]).to eq("Not Found")
   end
+
+  it "企業アカウントはインターンプロフィールを更新できない (403)" do
+    company = create(:company)
+    patch "/api/interns/me", params: { intern: { name: "乗っ取り" } },
+      headers: { "Authorization" => "Bearer #{JsonWebToken.encode(account_id: company.account.id)}" }, as: :json
+
+    expect(response).to have_http_status(:forbidden)
+  end
 end
